@@ -1,0 +1,73 @@
+# Day 27, 28, 29
+
+- name: "configure {{ component }} server"
+  hosts: "{{ component }}"
+  become: yes
+  serial: 5  # run entire playbook first on 5 servers, then take next 3 servers etc
+  roles:
+    - "{{ component }}"
+
+# eg:
+# ansible-playbook -e component=mongodb roboshop.yaml ->
+# {{ component }} value is taken from inventory.ini file based on the command line arg,
+# and also it executes tasks from roles-mongodb-tasks-main.yaml file,
+# and also takes related files from roles-mongodb-files-mongo.repo file,
+# also take username, password and other related {{ HOST }} names from directory named group_vars and file name all.yaml file.
+
+
+# eg:
+# ansible-playbook -e component=catalogue roboshop.yaml ->
+# {{ component }} value is taken from inventory.ini file based on the command line arg,
+# and also it executes tasks from roles-catalogue-meta-main.yaml file and check for dependencies, and hence
+# now it goes to common-tasks-main.yaml file and executes it,
+# now it goes to roles-catalogue-tasks-main.yaml file and checks for import_role and executes common-tasks-app-setup.yaml as given,
+# also take username, password and other related {{ HOST }} names from directory named group_vars and file name all.yaml file.
+
+# to run all logs in background using nohup and & and save in var/log/ansible.log file
+# nohup ansible-playbook -e component=catalogue roboshop.yaml  &>/var/log/ansible.log &
+
+# handlers - they are notifiers , i.e.you can call task-b when task-a changes, eg: when configuration chnges, you can restart the application
+# using handlers.
+
+# tags - to run specific tags inside playbook, tag and call it.
+# eg: ansible-playbook -e component=catalogue -t deployment roboshop.yaml
+
+
+# import role - tags applied will be applied to all tasks, parses playbook before execution, it is static,
+# conditions applied will be applied to all tasks
+# loops are not applied
+
+# include role - tags applied will not be applied to all tasks, it is dynamic, it wil directly execute playbook
+# conditions  will not be cared
+# loops are applied
+
+# Dynamic Inventory - servers will be created and destroyed based on traffic, we cannot use static inventory file,
+# we need to dynamically query the instances, we can use dynamic inventory plugin from aws by passing region, instances name,
+# running state etc. 
+
+# eg:
+# ansible-playbook -i frontend.aws_ec2.yaml -e component=frontend roboshop.yaml
+
+# Vault:
+# ansible-vault create vault.yaml
+
+# ansible-vault view vault.yaml
+
+# ansible-vault edit vault.yaml
+
+# eg:
+# ansible-playbook -e component=mysql roboshop.yaml --ask-vault-password
+
+# ansible-playbook -e component=mysql roboshop.yaml , if password is stored in vault_password_file= ~/.ansible/.mysql_vault
+
+# AWS platform - SSM parameter store or Secrets manager
+# eg to get mysql password from ssm parameter store or secret manager:
+# ansible-playbook -e component=mysql roboshop.yaml
+
+
+# Parallel execution - using forks/serial/throttle for controlling servers
+
+# Ansible disadvantages: ansible does not have state, hence cannot be used as IaaC
+# Ansible is a configuration management tool
+
+# Terraform - creating servers , ansible - connect to servers and configure them
